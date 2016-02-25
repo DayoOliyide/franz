@@ -49,18 +49,18 @@
                                         :revoked-callback (fn [p] (println \"PartitionsRevoked:\"(doall p))))
 
   NOTE:
-    Topic subscription can be done in the following ways 
+    Topic subscription can be done in the following ways
     1) One or more topic names                        <--- Supported by this function
     2) A regular expression matching required topics  <--- Supported by this function
     3) Specific topic partitions                      <--- Supported by the subscribe-to-partitions function
 
     The 3 ways are mutually exclusive, meaning you can't use the same consumer to subscribe in the
-    3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers. 
+    3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers.
 
-  For more details on usage 
-http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List)
-http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
-http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.regex.Pattern,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
+  For more details on usage
+  http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List)
+  http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
+  http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.regex.Pattern,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
        "
   [^KafkaConsumer consumer topics & {:keys [assigned-callback revoked-callback]
                                      :or {assigned-callback (fn [_])
@@ -77,7 +77,7 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 
 
 (defn subscribe-to-partitions
-  "Subscribes the consumer to the specific Topic partitions. This subscription is manual and not under the control of the broker. 
+  "Subscribes the consumer to the specific Topic partitions. This subscription is manual and not under the control of the broker.
    This function is equivalent to the old Simple level consumer
 
   (subscribe-to-partitions consumer {:topic \"dev\" :partition 2}
@@ -85,12 +85,12 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 
 
   NOTE:
-    Topic subscription can be done in the following ways 
+    Topic subscription can be done in the following ways
     1) One or more topic names                        <--- Supported by the subscribe-to-topics function
     2) A regular expression matching required topics  <--- Supported by the subscribe-to-topics function
     3) Specific topic partitions                      <--- Supported by this function
 
-    The 3 ways are mutually exclusive, meaning you can't use the same consumer to subscribe in the 3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers. 
+    The 3 ways are mutually exclusive, meaning you can't use the same consumer to subscribe in the 3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers.
 
   For more details on usage http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#assign(java.util.List)"
   [^KafkaConsumer consumer & tps]
@@ -107,7 +107,7 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 (defn subscribed-partitions
   "Returns a set of maps representing each topic-partition that the consumer is currently subscribed to,
    either via the subscribe-to-topics or subscribe-to-partitions function.
-  NOTE: If subscribed-topics is used to subscribed, there may not be any subscribed partitions as the assignment/subscription is up to the broker managing the group.id. 
+  NOTE: If subscribed-topics is used to subscribed, there may not be any subscribed partitions as the assignment/subscription is up to the broker managing the group.id.
 
   "
   [^KafkaConsumer consumer]
@@ -135,11 +135,11 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] 7)
-  
+
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] :beginning)
-  
+
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] :end)
@@ -185,7 +185,7 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
   (messages consumer :topic \"topic-a\" :partition 2 :offset :beginning)
   (messages consumer :topic \"topic-a\" :partition 2 :offset :end)
   (messages consumer :topic \"topic-a\" :partition 2 :offset :end :timeout 1500)
-  
+
   "
   ([^KafkaConsumer consumer] (messages consumer :timeout 1000))
   ([^KafkaConsumer consumer & {:keys [topic partition offset timeout]
@@ -223,14 +223,14 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 
   1) Commits all the offsets received from the last call to the messages function.
      Exceptions/Errors are ignored
-  
+
   (commit-async consumer)
 
 
 
   2) Commits all the offsets received from the last call to the messages function.
-     Success or failure is handled by the given callback function 
- 
+     Success or failure is handled by the given callback function
+
   (commit-async consumer (fn [offsets exception]
                           (if exception
                              (println \"Commits failed for \" offsets \" Exception->\" exception)
@@ -239,7 +239,7 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 
 
   3) Commits the specified offsets to the specific topic-partitions.
-     Success or failure is handled by the given callback function 
+     Success or failure is handled by the given callback function
 
   (def tp-om   {{:topic \"topic-a\", :partition 4} {:offset 24, :metadata \"important commit\"},
                 {:topic \"topic-a\", :partition 1} {:offset 234, :metadata \"commited by thread A\"},
@@ -272,13 +272,13 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
 
   1) Commits all the offsets received from the last call to the messages function.
      If there's any failure, an Exception is thrown.
-  
+
   (commit-sync consumer)
 
 
   2) Commits the specified offsets to the specific topic-partitions.
      If there's any failure, an Exception is thrown.
-  
+
 
   (def tp-om   {{:topic \"topic-a\", :partition 4} {:offset 24, :metadata \"important commit\"},
                 {:topic \"topic-a\", :partition 1} {:offset 234, :metadata \"commited by thread A\"},
@@ -303,9 +303,9 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
   "
   [^KafkaConsumer consumer tp]
   (->> tp
-      clojure->topic-partition
-      (.committed consumer)
-      to-clojure))
+       clojure->topic-partition
+       (.committed consumer)
+       to-clojure))
 
 
 (defn list-all-topics
@@ -363,4 +363,3 @@ http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsu
   "TODO"
   [^KafkaConsumer consumer]
   )
-
