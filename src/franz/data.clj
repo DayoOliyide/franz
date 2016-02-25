@@ -1,6 +1,7 @@
 (ns franz.data
   (:import [java.util HashMap Map]
            [org.apache.kafka.clients.consumer ConsumerRecord ConsumerRecords OffsetAndMetadata]
+           org.apache.kafka.clients.producer.RecordMetadata
            [org.apache.kafka.common Node PartitionInfo TopicPartition]))
 
 (defprotocol ToClojure
@@ -47,7 +48,13 @@
      :partition (.partition x)
      :leader (to-clojure (.leader x))
      :replicas (mapv to-clojure (.replicas x))
-     :in-sync-replicas  (mapv to-clojure (.inSyncReplicas x))}))
+     :in-sync-replicas  (mapv to-clojure (.inSyncReplicas x))})
+
+  RecordMetadata
+  (to-clojure [x]
+    {:topic (.topic x)
+     :partition (.partition x)
+     :offset (.offset x)}))
 
 
 (defn clojure->topic-partition [{:keys [topic partition] :as m}]
@@ -62,13 +69,13 @@
 
 (defn tp-om-map->clojure
   "Takes a java.util.Map made of TopicPartition as keys and OffsetAndMetadata as values,
-   converts them to the following clojure equivalent data structure 
+   converts them to the following clojure equivalent data structure
 
   {{:topic \"test\", :partition 77} {:offset 34, :metadata \"data data\"},
    {:topic \"prod\", :partition 4} {:offset 24, :metadata \"more data\"},
    {:topic \"dev\", :partition 1} {:offset 234, :metadata \"loads of data\"},
    {:topic \"dev\", :partition 7} {:offset 23, :metadata \"mega data\"}}
-"
+  "
   [^Map tp-om]
   (let [reduce-fn (fn [m [^TopicPartition tp ^OffsetAndMetadata om]]
                     (assoc m (to-clojure tp) (to-clojure om)))]
@@ -96,8 +103,8 @@
    converts it to the following clojure equivalent data structure
 
   {
-\"topic-a\"
- [{:topic \"topic-a\",
+  \"topic-a\"
+  [{:topic \"topic-a\",
    :partition 1,
    :leader {:id 1, :host \"172.17.0.3\", :port 9092},
    :replicas [{:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\", :port 9093} {:id 3, :host \"172.17.0.4\", :port 9094}],
@@ -108,11 +115,11 @@
    :replicas [{:id 3, :host \"172.17.0.4\", :port 9094} {:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\", :port 9093}],
    :in-sync-replicas [{:id 3, :host \"172.17.0.4\", :port 9094} {:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\", :port 9093}]}],
 
- \"topic-b\"
- [{:topic \"topic-b\",
+  \"topic-b\"
+  [{:topic \"topic-b\",
    :partition 0,
    :leader {:id 3, :host \"172.17.0.4\", :port 9094},
-   :replicas [{:id 3, :host \"172.17.0.4\", :port 9094} {:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\", 
+   :replicas [{:id 3, :host \"172.17.0.4\", :port 9094} {:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\",
 :port 9093}],
    :in-sync-replicas [{:id 3, :host \"172.17.0.4\", :port 9094} {:id 1, :host \"172.17.0.3\", :port 9092} {:id 2, :host \"172.17.0.2\", :port 9093}]}]}
   "
@@ -120,6 +127,3 @@
   (let [reduce-fn (fn [m [name pi-list]]
                     (assoc m name (mapv to-clojure pi-list)))]
     (reduce reduce-fn {} str-pi)))
-
-
-
