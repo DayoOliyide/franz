@@ -1,5 +1,5 @@
 (ns franz.data
-  (:import [java.util HashMap Map]
+  (:import [java.util HashMap Map Properties]
            [org.apache.kafka.clients.consumer ConsumerRecord ConsumerRecords OffsetAndMetadata]
            org.apache.kafka.clients.producer.RecordMetadata
            [org.apache.kafka.common Node PartitionInfo TopicPartition]))
@@ -55,6 +55,13 @@
     {:topic (.topic x)
      :partition (.partition x)
      :offset (.offset x)}))
+
+(defn ^Properties map->properties
+  [^Map m]
+  (let [p (Properties.)]
+    (doseq [[k ^String v] m]
+      (.setProperty p (name k) v))
+    p))
 
 
 (defn clojure->topic-partition [{:keys [topic partition] :as m}]
