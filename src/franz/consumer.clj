@@ -1,6 +1,6 @@
 (ns ^{:doc "Clojure interface for Kafka Consumer API. For\n  complete JavaDocs\nsee:\n  http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/package-summary.html"}
-    franz.consumer
-  (:require [franz.data :refer :all])
+    kafkian.consumer
+  (:require [kafkian.data :refer :all])
   (:import java.util.List
            java.util.regex.Pattern
            [org.apache.kafka.clients.consumer ConsumerRebalanceListener KafkaConsumer OffsetAndMetadata OffsetCommitCallback]

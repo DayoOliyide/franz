@@ -1,6 +1,6 @@
-(defproject franz "0.1.0-SNAPSHOT"
+(defproject kafkian "0.1.0-SNAPSHOT"
   :description "A Clojure wrapper for Kafkas 0.9.x client"
-  :url "https://github.com/DayoOliyide/franz"
+  :url "https://github.com/DayoOliyide/kafkian"
   :license {:name "Apache License 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0"}
   :dependencies [[org.clojure/clojure "1.7.0"]

@@ -1,5 +1,5 @@
-(ns franz.admin
-  (:require [franz.data :refer [map->properties]])
+(ns kafkian.admin
+  (:require [kafkian.data :refer [map->properties]])
   (:import kafka.admin.AdminUtils
            kafka.utils.ZkUtils))
 

@@ -1,4 +1,4 @@
-(ns franz.data
+(ns kafkian.data
   (:import [java.util HashMap Map Properties]
            [org.apache.kafka.clients.consumer ConsumerRecord ConsumerRecords OffsetAndMetadata]
            org.apache.kafka.clients.producer.RecordMetadata

@@ -1,9 +1,9 @@
 (ns ^{:doc "Clojure interface for Kafka Producer API. For
   complete JavaDocs, see:
   http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/producer/package-summary.html"}
-    franz.producer
+    kafkian.producer
   (:refer-clojure :exclude [send flush])
-  (:require [franz.data :refer :all])
+  (:require [kafkian.data :refer :all])
   (:import [java.util.concurrent Future TimeUnit TimeoutException]
            [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata]
            [org.apache.kafka.common Metric MetricName]
