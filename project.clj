@@ -1,4 +1,4 @@
-(defproject kafkian "0.1.0-SNAPSHOT"
+(defproject com.dayooliyide/kafkian "0.1.0-SNAPSHOT"
   :description "A Clojure wrapper for Kafkas 0.9.x client"
   :url "https://github.com/DayoOliyide/kafkian"
   :license {:name "Apache License 2.0"

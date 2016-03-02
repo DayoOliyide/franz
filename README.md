@@ -4,15 +4,21 @@ A Clojure library for the Kafka 0.9 release.
 
 This library takes it's inspiration and some code from the [clj- kafka](https://github.com/pingles/clj-kafka/) library.
 
-It's raison d'être is that I had an immediate need for a clojure wrapper/interface to Kafka 0.9, which clj-kafka doesn't currently have.
+It's raison d'être is that I had an immediate need for a clojure wrapper/interface to Kafka 0.9,
+which clj-kafka doesn't currently have.
 
 
 **NOTE**:This library is NOT compatible with Kafka Clusters below version 0.9
          Use the [clj- kafka](https://github.com/pingles/clj-kafka/) for Kafka Clusters version 0.8
 
+**Still a SNAPSHOT release, a propery release will be done soon**
+
 ## Installation
 
-TODO
+Add the following to your [Leiningen](http://github.com/technomancy/leiningen) `project.clj`:
+
+![latest kafkian version](https://clojars.org/com.dayooliyide/kafkian/latest-version.svg)
+
 
 ## Usage
 
