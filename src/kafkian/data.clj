@@ -64,17 +64,18 @@
     p))
 
 
-(defn clojure->topic-partition [{:keys [topic partition] :as m}]
+(defn ^TopicPartition map->topic-partition [{:keys [topic partition] :as m}]
   (if (or (nil? topic) (nil? partition))
     (throw (ex-info "Provided map is missing topic or partition keys" m))
     (TopicPartition. topic partition)))
 
-(defn clojure->offset-metadata [{:keys [offset metadata] :as m}]
+(defn ^OffsetAndMetadata map->offset-metadata [{:keys [offset metadata] :as m}]
   (if (or (nil? offset) (nil? metadata))
     (throw (ex-info "Provided map is missing offset or metadata keys" m))
     (OffsetAndMetadata. offset metadata)))
 
-(defn tp-om-map->clojure
+;;NOT happy with this function name
+(defn tp-om-map->map
   "Takes a java.util.Map made of TopicPartition as keys and OffsetAndMetadata as values,
    converts them to the following clojure equivalent data structure
 
@@ -88,7 +89,8 @@
                     (assoc m (to-clojure tp) (to-clojure om)))]
     (reduce reduce-fn {} tp-om)))
 
-(defn clojure->tp-om-map
+;;NOT happy with this function name
+(defn map->tp-om-map
   "Takes a Clojure map (see below for example) and converts it to a java.util.Map made of TopicPartition as keys and OffsetAndMetadata as values
 
   {{:topic \"test\", :partition 77} {:offset 34, :metadata \"data data\"},
@@ -99,15 +101,17 @@
   [m]
   (let [tp-om-map (HashMap.)
         reduce-fn (fn [^Map m kv]
-                    (.put m (clojure->topic-partition (first kv))
-                          (clojure->offset-metadata (second kv)))
+                    (.put m (map->topic-partition (first kv))
+                          (map->offset-metadata (second kv)))
                     m)]
     (reduce reduce-fn tp-om-map  m)))
 
 
-(defn str-pi-map->clojure
+;;NOT happy with this function name
+(defn str-pi-map->map
   "Takes a java.util.Map made of Strings as keys and java.util.List <PartitionInfo> as values,
-   converts it to the following clojure equivalent data structure
+   converts it to a Map with the keys being the topic name and the values being a vector of maps (each map representing information about a topic partition)
+  e.g
 
   {
   \"topic-a\"

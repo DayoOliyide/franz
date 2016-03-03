@@ -94,7 +94,7 @@
 
   For more details on usage http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#assign(java.util.List)"
   [^KafkaConsumer consumer & tps]
-  (let [tp-seq (map clojure->topic-partition tps)]
+  (let [tp-seq (map map->topic-partition tps)]
     (.assign consumer tp-seq)))
 
 
@@ -148,7 +148,7 @@
   ([^KafkaConsumer consumer topic partition offset]
    (seek consumer (vector {:topic topic :partition partition}) offset))
   ([^KafkaConsumer consumer tp-seq offset]
-   (let [tp-class-seq (map clojure->topic-partition tp-seq)
+   (let [tp-class-seq (map map->topic-partition tp-seq)
          tp-class-array (into-array TopicPartition tp-class-seq)]
      (cond
        (= :beginning offset) (.seekToBeginning consumer tp-class-array)
@@ -254,13 +254,13 @@
   ([^KafkaConsumer consumer offset-commit-fn]
    (let [callback (reify OffsetCommitCallback
                     (onComplete [_ offsets exception]
-                      (offset-commit-fn (tp-om-map->clojure offsets) exception)))]
+                      (offset-commit-fn (tp-om-map->map offsets) exception)))]
      (.commitAsync consumer callback)))
   ([^KafkaConsumer consumer topic-partition-offsets-metadata offset-commit-fn]
    (let [callback (reify OffsetCommitCallback
                     (onComplete [_ offsets exception]
-                      (offset-commit-fn (tp-om-map->clojure offsets) exception)))
-         tp-om-map (clojure->tp-om-map topic-partition-offsets-metadata)]
+                      (offset-commit-fn (tp-om-map->map offsets) exception)))
+         tp-om-map (map->tp-om-map topic-partition-offsets-metadata)]
      (.commitAsync consumer tp-om-map callback))))
 
 
@@ -288,7 +288,7 @@
   "
   ([^KafkaConsumer consumer] (.commitSync consumer))
   ([^KafkaConsumer consumer topic-partitions-offsets-metadata]
-   (let [tp-om-map (clojure->tp-om-map topic-partitions-offsets-metadata)]
+   (let [tp-om-map (map->tp-om-map topic-partitions-offsets-metadata)]
      (.commitSync consumer tp-om-map))))
 
 
@@ -303,7 +303,7 @@
   "
   [^KafkaConsumer consumer tp]
   (->> tp
-       clojure->topic-partition
+       map->topic-partition
        (.committed consumer)
        to-clojure))
 
@@ -315,7 +315,7 @@
 
   "
   [^KafkaConsumer consumer]
-  (str-pi-map->clojure (.listTopics consumer)))
+  (str-pi-map->map (.listTopics consumer)))
 
 (defn list-all-partitions
   "Get metadata about all partitions for a particular topic.
@@ -338,7 +338,7 @@
                   {:topic \"topic-b\" :partition 0})
   "
   [^KafkaConsumer consumer tp-seq]
-  (->> (map clojure->topic-partition tp-seq)
+  (->> (map map->topic-partition tp-seq)
        (into-array TopicPartition)
        (.pause consumer)))
 
@@ -354,7 +354,7 @@
                    {:topic \"topic-b\" :partition 0})
   "
   [^KafkaConsumer consumer tp-seq]
-  (->> (map clojure->topic-partition tp-seq)
+  (->> (map map->topic-partition tp-seq)
        (into-array TopicPartition)
        (.resume consumer)))
 
