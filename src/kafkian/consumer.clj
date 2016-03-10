@@ -98,20 +98,29 @@
     (.assign consumer tp-seq)))
 
 
-(defn subscribed-topics
-  "Returns a set of topics (Strings) currently subscribed to via the subscribe-to-topics function.
-   NOTE: use subscibed-partitions to get the topic and partition subscribed to via the subscribe-to-partitions function"
-  [^KafkaConsumer consumer]
-  (.subscription consumer))
+(defn subscriptions
+  "Returns a map of topics and sets of associated partition-ids.
+  If the partition subscription is auto and managed by the broker, the set of associated partition-ids will be nil.
 
-(defn subscribed-partitions
-  "Returns a set of maps representing each topic-partition that the consumer is currently subscribed to,
-   either via the subscribe-to-topics or subscribe-to-partitions function.
-  NOTE: If subscribed-topics is used to subscribed, there may not be any subscribed partitions as the assignment/subscription is up to the broker managing the group.id.
+  Usage:
 
+  (subscriptions consumer)
+  ;; => {\"topic-a\"  nil
+  ;;     \"topic-b\" #{1 2 3}
+  ;;     \"topic-c\" #{1}}
   "
   [^KafkaConsumer consumer]
-  (reduce #(conj %1 (to-clojure %2)) #{} (.assignment consumer)))
+  (let [auto-subs (.subscription consumer)
+        manual-subs (.assignment consumer)
+        subs (reduce #(assoc %1 %2 nil)  {} auto-subs)
+        reduce-fn (fn [m tp-object]
+                    (let [tp (to-clojure tp-object)
+                          t (:topic tp)
+                          p (:partition tp)
+                          p-set (or (get m t) #{})
+                          p-set (conj p-set p)]
+                      (assoc m t p-set)))]
+    (reduce reduce-fn subs manual-subs)))
 
 (defn unsubscribe
   "Unsubcribes the consumer from any subscribed topics and/or partitions.
