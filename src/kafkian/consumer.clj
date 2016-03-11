@@ -22,7 +22,8 @@
                        \"group.id\" \"data-pipe\"
                        \"auto.commit.interval.ms\" \"1000\"})
   (with-open [c (consumer config (string-deserializer) (string-deserializer))]
-    (take 5 (messages c :topic \"test\")))
+    (subscribe-to-topics c \"test\")
+    (take 5 (messages c)))
   "
   ([^java.util.Map config]
    (KafkaConsumer. config))
@@ -167,58 +168,36 @@
                              {:offset offset}))))))
 
 (defn messages
-  "Consumes messages from subscribed partitions and returns a sequence of messages.
-  If no messages are available, it will use the provided timeout (or default of 1000ms) to BLOCK for messages to be available,
-  before returning.
-
-  This function can be used to
-  1) Consume from the currently subscribed topics/partitions
-  2) Subscribe to a given topic(s) (or topics matching regex) and consume from the broker assigned partitions
-  3) Subscribe to only the specific partition and consume from the commited offset or a specific offset
-
-  If the consumer is already subscribed and this function is passed subscription arguments
-  ( topic(s) or partitions ) which are different from it's current subscription, this function will attempt
-  to change the subscription. NOTE you can't switch between topic name, regex and partition based subscriptions
-  (see subscribe-to-partitions subscribe-to-topics documentation).
+  "Consumes messages from currently subscribed partitions and returns a sequence of messages.
+  If no messages are available, it will use the provided timeout (or default of 1000ms)
+  to BLOCK for messages to be available, before returning.
 
   Usage:
 
   (messages consumer)
+  ;; => ({:topic \"first-topic\",
+  ;;      :partition 0,
+  ;;      :offset 0,
+  ;;      :key nil,
+  ;;      :value \"Count Zero says 1 at Fri Mar 11 14:34:27 GMT 2016\"}
+  ;;     {:topic \"first-topic\",
+  ;;      :partition 0,
+  ;;      :offset 1,
+  ;;      :key nil,
+  ;;      :value \"Count Zero says 2 at Fri Mar 11 14:34:31 GMT 2016\"})
+
   (messages consumer :timeout 1500)
-  (messages consumer :topic \"topic-a\")
-  (messages consumer :topic [\"topic-a\" \"topic-b\"])
-  (messages consumer :topic #\"topic.+\")
-  (messages consumer :topic \"topic-a\" :partition 2)
-  (messages consumer :topic \"topic-a\" :partition 2 :timeout 3000)
-  (messages consumer :topic \"topic-a\" :partition 2 :offset 63)
-  (messages consumer :topic \"topic-a\" :partition 2 :offset :beginning)
-  (messages consumer :topic \"topic-a\" :partition 2 :offset :end)
-  (messages consumer :topic \"topic-a\" :partition 2 :offset :end :timeout 1500)
+  ;; => ({:topic \"first-topic\",
+  ;;      :partition 0,
+  ;;      :offset 2,
+  ;;      :key nil,
+  ;;      :value \"Count Zero says 3 at Fri Mar 11 14:34:32 GMT 2016\"})
 
   "
-  ([^KafkaConsumer consumer] (messages consumer :timeout 1000))
-  ([^KafkaConsumer consumer & {:keys [topic partition offset timeout]
-                               :or {timeout 1000}
-                               :as options}]
+  [^KafkaConsumer consumer & {:keys [timeout] :or {timeout 1000}}]
 
-   (when (and (some? partition) (nil? topic))
-     (throw (ex-info "Topic needed to subscribe to partition" options)))
-
-   (when (and (some? offset) (or (nil? topic) (nil? partition)))
-     (throw (ex-info "Topic and partition need to seek to offset" options)))
-
-   (when (and (= Pattern (type topic)) (some? partition))
-     (throw (ex-info "Using a regex for topic with a partition is not possible" options)))
-
-   (when topic
-     (if partition
-       (do  (subscribe-to-partitions consumer {:topic topic :partition partition})
-            (when offset
-              (seek consumer topic partition offset)))
-       (subscribe-to-topics consumer topic)))
-
-   (let [consumer-records (.poll consumer timeout)]
-     (to-clojure consumer-records))))
+  (let [consumer-records (.poll consumer timeout)]
+    (to-clojure consumer-records)))
 
 
 
