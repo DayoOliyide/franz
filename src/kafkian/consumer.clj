@@ -100,28 +100,33 @@
 
 
 (defn subscriptions
-  "Returns a map of topics and sets of associated partition-ids.
-  If the partition subscription is auto and managed by the broker, the set of associated partition-ids will be nil.
+  "Returns all the topics that the consumer is subscribed to and the actual partitions
+  that it's consuming from. The returned map has the subscribed topics as keys and a map
+  of topic (assoc with :topic) and a set of consumed partitions (assoc with :partitions)
+  NOTE Subscriptions using only topics (names or regex patterns) can lead a consumer to be
+  subscribed to a topic but NOT consume from any of it's partitions.
+  (see the third-topic in the Usage example below)
 
   Usage:
 
   (subscriptions consumer)
-  ;; => {\"topic-a\"  nil
-  ;;     \"topic-b\" #{1 2 3}
-  ;;     \"topic-c\" #{1}}
+  ;; => {\"first-topic\" {:topic \"first-topic\", :partitions #{0}},
+  ;;     \"second-topic\" {:topic \"second-topic\", :partitions #{0 1 2}},
+  ;;     \"third-topic\" {:topic \"third-topic\", :partitions #{}}}
   "
   [^KafkaConsumer consumer]
   (let [auto-subs (.subscription consumer)
         manual-subs (.assignment consumer)
-        subs (reduce #(assoc %1 %2 nil)  {} auto-subs)
+        subs (reduce #(assoc %1 %2 {:topic %2 :partitions #{}})  {} auto-subs)
         reduce-fn (fn [m tp-object]
                     (let [tp (to-clojure tp-object)
                           t (:topic tp)
-                          p (:partition tp)
-                          p-set (or (get m t) #{})
-                          p-set (conj p-set p)]
-                      (assoc m t p-set)))]
+                          p (:partition tp)]
+                      (update m t #(if %1
+                                     (update %1 :partitions conj p)
+                                     {:topic t :partitions #{p}}))))]
     (reduce reduce-fn subs manual-subs)))
+
 
 (defn unsubscribe
   "Unsubcribes the consumer from any subscribed topics and/or partitions.
