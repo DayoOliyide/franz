@@ -51,8 +51,8 @@
   (subscribe consumer \"topic-a\")
   ;; => nil
 
-  (subscribe consumer \"topic-a\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\"(doall p)))
-                                      :revoked-callback (fn [p] (println \"PartitionsRevoked:\"(doall p))))
+  (subscribe consumer \"topic-a\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\" p))
+                                      :revoked-callback (fn [p] (println \"PartitionsRevoked:\" p)))
   ;; => nil
 
   (subscribe consumer [\"topic-a\" \"topic-b\"])
@@ -77,8 +77,8 @@
                                           revoked-callback (fn [_])}}]
   ;;TODO needs to be cleaned up and refactored
   (let [listener (reify ConsumerRebalanceListener
-                   (onPartitionsAssigned [_ partitions] (assigned-callback (map to-clojure partitions)))
-                   (onPartitionsRevoked [_ partitions] (revoked-callback (map to-clojure partitions))))
+                   (onPartitionsAssigned [_ partitions] (assigned-callback (mapv to-clojure partitions)))
+                   (onPartitionsRevoked [_ partitions] (revoked-callback (mapv to-clojure partitions))))
         topics (cond
                  (string? topics) (vector topics)
                  (and (sequential? topics) (string? (first topics))) topics
@@ -181,7 +181,7 @@
   Usage:
 
   (messages consumer)
-  ;; => ({:topic \"topic-a\",
+  ;; => [{:topic \"topic-a\",
   ;;      :partition 0,
   ;;      :offset 0,
   ;;      :key nil,
@@ -190,14 +190,14 @@
   ;;      :partition 0,
   ;;      :offset 1,
   ;;      :key nil,
-  ;;      :value \"Count Zero says 2 at Fri Mar 11 14:34:31 GMT 2016\"})
+  ;;      :value \"Count Zero says 2 at Fri Mar 11 14:34:31 GMT 2016\"}]
 
   (messages consumer :timeout 1500)
-  ;; => ({:topic \"topic-a\",
+  ;; => [{:topic \"topic-a\",
   ;;      :partition 0,
   ;;      :offset 2,
   ;;      :key nil,
-  ;;      :value \"Count Zero says 3 at Fri Mar 11 14:34:32 GMT 2016\"})
+  ;;      :value \"Count Zero says 3 at Fri Mar 11 14:34:32 GMT 2016\"}]
 
   "
   [^KafkaConsumer consumer & {:keys [timeout] :or {timeout 1000}}]
@@ -318,7 +318,7 @@
 
 "
   [^KafkaConsumer consumer topic]
-  (map to-clojure  (.partitionsFor consumer topic)))
+  (mapv to-clojure  (.partitionsFor consumer topic)))
 
 
 (defn pause

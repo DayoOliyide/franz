@@ -29,7 +29,7 @@
 
   ConsumerRecords
   (to-clojure [x]
-    (map to-clojure x))
+    (mapv to-clojure x))
 
   OffsetAndMetadata
   (to-clojure [x]
