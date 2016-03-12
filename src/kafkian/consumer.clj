@@ -31,38 +31,47 @@
    (KafkaConsumer. config key-deserializer value-deserializer)))
 
 
-(defn subscribe-to-topics
-  "Subscribes the consumer to all or some of the partitions of the topics given.
-   The provided topics can be a String, a sequence of Strings or a Regular expression.
-   The actual partitions subscribed to is dependant on the number of consumers using the
-   same group.id and the broker managing the group.id.
-   This function is equivalent to the old High level consumer
+(defn subscribe
+  "Subscribes the consumer to Topic partition(s) with callbacks for broker initiated assignments.
+  The actual partitions can actually be specified (manual assignment) or left up to the Kafka broker (automatic assignment).
+  This function performs 3 forms of subscription and they are -
+  1) Single or Sequence of topic names             <---- Automatic partition assignment by Kafka Broker
+  2) Regular expression matching topic name(s)     <---- Automatic partition assignment by Kafka Broker
+  3) A sequence of specific topic partitions       <---- Manual partition assignment by user/client/consumer
 
-  The provided callback functions should be of a single arity and should expect a sequence of maps describing
-  specific partitions (e.g [{:topic \"dev\" :partition 1} {:topic \"dev\" :partition 2}])
-  These functions are called whenever the broker revokes or assigns partitions to the consumer
+  NOTE a)The above 3 forms are mutually exclusive, meaning you need to unsubcsribe in between subscribing using different forms
+       b)Calling subscribe again with the same form but different arguments is equivalent to unsubscribing and then subscribing anew.
+       c)The optional callback function arguments are only used for Automatic partition subscriptions
+         i.e subcriptions using single name, sequence of names or regular expression
+         The callback functions should be of a single arity and should expect a sequence of maps describing
+         specific partitions (e.g [{:topic \"first-topic\" :partition 1} {:topic \"first-topic\" :partition 2}])
 
-  (subscribe-to-topics consumer \"dev\")
-  (subscribe-to-topics consumer [\"dev\" \"test\"])
-  (subscribe-to-topics consumer #\"dev.+\")
+  Usage:
 
-  (subscribe-to-topics consumer \"dev\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\"(doall p)))
-                                        :revoked-callback (fn [p] (println \"PartitionsRevoked:\"(doall p))))
+  (subscribe consumer \"first-topic\")
+  ;; => nil
 
-  NOTE:
-    Topic subscription can be done in the following ways
-    1) One or more topic names                        <--- Supported by this function
-    2) A regular expression matching required topics  <--- Supported by this function
-    3) Specific topic partitions                      <--- Supported by the subscribe-to-partitions function
+  (subscribe consumer \"first-topic\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\"(doall p)))
+                                      :revoked-callback (fn [p] (println \"PartitionsRevoked:\"(doall p))))
+  ;; => nil
 
-    The 3 ways are mutually exclusive, meaning you can't use the same consumer to subscribe in the
-    3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers.
+  (subscribe consumer [\"first-topic\" \"second-topic\"])
+  ;; => nil
 
-  For more details on usage
+  (subscribe consumer #\".+-topic\")
+  ;; => nil
+
+  (subscribe consumer [{:topic \"first-topic\" :partitions #{0}}
+                       {:topic \"second-topic\" :partitions #{0 1}}
+                       {:topic \"third-topic\" :partitions #{0}}])
+  ;; => nil
+
+  For more in-depth information
   http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List)
   http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.List,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
   http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#subscribe(java.util.regex.Pattern,%20org.apache.kafka.clients.consumer.ConsumerRebalanceListener)
-       "
+  http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#assign(java.util.List)
+  "
   [^KafkaConsumer consumer topics & {:keys [assigned-callback revoked-callback]
                                      :or {assigned-callback (fn [_])
                                           revoked-callback (fn [_])}}]
@@ -70,33 +79,21 @@
                    (onPartitionsAssigned [_ partitions] (assigned-callback (map to-clojure partitions)))
                    (onPartitionsRevoked [_ partitions] (revoked-callback (map to-clojure partitions))))
         topics (cond
-                 (sequential? topics) topics
-                 (= Pattern (type topics)) topics
                  (string? topics) (vector topics)
-                 :else (throw (ex-info "Topic should be a string, sequence or pattern" {:topic topics})))]
-    (.subscribe consumer topics listener)))
+                 (and (sequential? topics) (string? (first topics))) topics
+                 (= Pattern (type topics)) topics
+                 (and (sequential? topics) (map? (first topics))) topics
+                 :else (throw
+                        (ex-info "Topic should be a string, sequence (of strings or maps) or pattern"
+                                 {:topic topics})))]
 
-
-(defn subscribe-to-partitions
-  "Subscribes the consumer to the specific Topic partitions. This subscription is manual and not under the control of the broker.
-   This function is equivalent to the old Simple level consumer
-
-  (subscribe-to-partitions consumer {:topic \"dev\" :partition 2}
-                                    {:topic \"dev\" :partition 0})
-
-
-  NOTE:
-    Topic subscription can be done in the following ways
-    1) One or more topic names                        <--- Supported by the subscribe-to-topics function
-    2) A regular expression matching required topics  <--- Supported by the subscribe-to-topics function
-    3) Specific topic partitions                      <--- Supported by this function
-
-    The 3 ways are mutually exclusive, meaning you can't use the same consumer to subscribe in the 3 different ways at the same time. You either unsubscribe before re-subscribing or you use different consumers.
-
-  For more details on usage http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#assign(java.util.List)"
-  [^KafkaConsumer consumer & tps]
-  (let [tp-seq (map map->topic-partition tps)]
-    (.assign consumer tp-seq)))
+    (if (and (sequential? topics) (map? (first topics)))
+      (do
+        (let [expand-tps (fn [{:keys [topic partitions]}]
+                           (reduce #(conj %1 (map->topic-partition {:topic topic :partition %2})) [] partitions))
+              exploded-tps (mapcat expand-tps topics)]
+          (.assign consumer exploded-tps)))
+      (.subscribe consumer topics listener))))
 
 
 (defn subscriptions
