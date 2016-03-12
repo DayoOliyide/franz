@@ -81,8 +81,29 @@
    (.close producer timeout-ms TimeUnit/MILLISECONDS)))
 
 (defn partitions
+  "Returns a sequence of maps which represent information about each partition of the
+  specified topic.
+
+  Usage :
+
+  (partitions producer \"topic-a\")
+  ;; => [{:topic \"topic-a\",
+  ;;      :partition 2,
+  ;;      :leader {:id 2, :host \"172.17.0.3\", :port 9093},
+  ;;      :replicas [{:id 2, :host \"172.17.0.3\", :port 9093}
+  ;;                 {:id 3, :host \"172.17.0.5\", :port 9094}],
+  ;;      :in-sync-replicas [{:id 2, :host \"172.17.0.3\", :port 9093}
+  ;;                         {:id 3, :host \"172.17.0.5\", :port 9094}]}
+  ;;     {:topic \"topic-a\",
+  ;;      :partition 1,
+  ;;      :leader {:id 1, :host \"172.17.0.4\", :port 9092},
+  ;;      :replicas [{:id 1, :host \"172.17.0.4\", :port 9092}
+  ;;                 {:id 2, :host \"172.17.0.3\", :port 9093}],
+  ;;      :in-sync-replicas [{:id 1, :host \"172.17.0.4\", :port 9092}
+  ;;                         {:id 2, :host \"172.17.0.3\", :port 9093}]}]
+  "
   [^KafkaProducer producer topic]
-  (.partitionsFor producer topic))
+  (mapv to-clojure (.partitionsFor producer topic)))
 
 (defn metrics
   "TODO"
