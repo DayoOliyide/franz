@@ -75,6 +75,7 @@
   [^KafkaConsumer consumer topics & {:keys [assigned-callback revoked-callback]
                                      :or {assigned-callback (fn [_])
                                           revoked-callback (fn [_])}}]
+  ;;TODO needs to be cleaned up and refactored
   (let [listener (reify ConsumerRebalanceListener
                    (onPartitionsAssigned [_ partitions] (assigned-callback (map to-clojure partitions)))
                    (onPartitionsRevoked [_ partitions] (revoked-callback (map to-clojure partitions))))
@@ -98,20 +99,22 @@
 
 (defn subscriptions
   "Returns all the topics that the consumer is subscribed to and the actual partitions
-  that it's consuming from. The returned map has the subscribed topics as keys and a map
+  that it's consuming from. The data is a sequence of maps with each map being made up
   of topic (assoc with :topic) and a set of consumed partitions (assoc with :partitions)
-  NOTE Subscriptions using only topics (names or regex patterns) can lead a consumer to be
-  subscribed to a topic but NOT consume from any of it's partitions.
-  (see the topic-c in the Usage example below)
+  NOTE Subscriptions made using only topics (names or regex patterns) will have their
+       partitions automatically assigned/managed by the broker. This can lead a consumer
+       to be subscribed to a topic but NOT consuming from any of it's partitions.
+       (see the topic-c in the Usage example below)
 
   Usage:
 
   (subscriptions consumer)
-  ;; => {\"topic-a\" {:topic \"topic-a\", :partitions #{0}},
-  ;;     \"topic-b\" {:topic \"topic-b\", :partitions #{0 1 2}},
-  ;;     \"topic-c\" {:topic \"topic-c\", :partitions #{}}}
+  ;; => [{:topic \"topic-a\", :partitions #{0}},
+  ;;     {:topic \"topic-b\", :partitions #{0 1 2}},
+  ;;     {:topic \"topic-c\", :partitions #{}}]
   "
   [^KafkaConsumer consumer]
+  ;;TODO is this clear and readable enough ? refactor?
   (let [auto-subs (.subscription consumer)
         manual-subs (.assignment consumer)
         subs (reduce #(assoc %1 %2 {:topic %2 :partitions #{}})  {} auto-subs)
@@ -122,7 +125,8 @@
                       (update m t #(if %1
                                      (update %1 :partitions conj p)
                                      {:topic t :partitions #{p}}))))]
-    (reduce reduce-fn subs manual-subs)))
+    (->> (reduce reduce-fn subs manual-subs)
+        (mapv val))))
 
 
 (defn unsubscribe
