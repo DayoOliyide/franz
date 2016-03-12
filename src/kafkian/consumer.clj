@@ -22,7 +22,7 @@
                        \"group.id\" \"data-pipe\"
                        \"auto.commit.interval.ms\" \"1000\"})
   (with-open [c (consumer config (string-deserializer) (string-deserializer))]
-    (subscribe-to-topics c \"test\")
+    (subscribe c \"topic-a\")
     (take 5 (messages c)))
   "
   ([^java.util.Map config]
@@ -44,26 +44,26 @@
        c)The optional callback function arguments are only used for Automatic partition subscriptions
          i.e subcriptions using single name, sequence of names or regular expression
          The callback functions should be of a single arity and should expect a sequence of maps describing
-         specific partitions (e.g [{:topic \"first-topic\" :partition 1} {:topic \"first-topic\" :partition 2}])
+         specific partitions (e.g [{:topic \"topic-a\" :partition 1} {:topic \"topic-a\" :partition 2}])
 
   Usage:
 
-  (subscribe consumer \"first-topic\")
+  (subscribe consumer \"topic-a\")
   ;; => nil
 
-  (subscribe consumer \"first-topic\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\"(doall p)))
+  (subscribe consumer \"topic-a\" :assigned-callback (fn [p] (println \"PartitionsAssigned:\"(doall p)))
                                       :revoked-callback (fn [p] (println \"PartitionsRevoked:\"(doall p))))
   ;; => nil
 
-  (subscribe consumer [\"first-topic\" \"second-topic\"])
+  (subscribe consumer [\"topic-a\" \"topic-b\"])
   ;; => nil
 
-  (subscribe consumer #\".+-topic\")
+  (subscribe consumer #\"topic-.+\")
   ;; => nil
 
-  (subscribe consumer [{:topic \"first-topic\" :partitions #{0}}
-                       {:topic \"second-topic\" :partitions #{0 1}}
-                       {:topic \"third-topic\" :partitions #{0}}])
+  (subscribe consumer [{:topic \"topic-a\" :partitions #{0}}
+                       {:topic \"topic-b\" :partitions #{0 1}}
+                       {:topic \"topic-c\" :partitions #{0}}])
   ;; => nil
 
   For more in-depth information
@@ -102,14 +102,14 @@
   of topic (assoc with :topic) and a set of consumed partitions (assoc with :partitions)
   NOTE Subscriptions using only topics (names or regex patterns) can lead a consumer to be
   subscribed to a topic but NOT consume from any of it's partitions.
-  (see the third-topic in the Usage example below)
+  (see the topic-c in the Usage example below)
 
   Usage:
 
   (subscriptions consumer)
-  ;; => {\"first-topic\" {:topic \"first-topic\", :partitions #{0}},
-  ;;     \"second-topic\" {:topic \"second-topic\", :partitions #{0 1 2}},
-  ;;     \"third-topic\" {:topic \"third-topic\", :partitions #{}}}
+  ;; => {\"topic-a\" {:topic \"topic-a\", :partitions #{0}},
+  ;;     \"topic-b\" {:topic \"topic-b\", :partitions #{0 1 2}},
+  ;;     \"topic-c\" {:topic \"topic-c\", :partitions #{}}}
   "
   [^KafkaConsumer consumer]
   (let [auto-subs (.subscription consumer)
@@ -177,19 +177,19 @@
   Usage:
 
   (messages consumer)
-  ;; => ({:topic \"first-topic\",
+  ;; => ({:topic \"topic-a\",
   ;;      :partition 0,
   ;;      :offset 0,
   ;;      :key nil,
   ;;      :value \"Count Zero says 1 at Fri Mar 11 14:34:27 GMT 2016\"}
-  ;;     {:topic \"first-topic\",
+  ;;     {:topic \"topic-a\",
   ;;      :partition 0,
   ;;      :offset 1,
   ;;      :key nil,
   ;;      :value \"Count Zero says 2 at Fri Mar 11 14:34:31 GMT 2016\"})
 
   (messages consumer :timeout 1500)
-  ;; => ({:topic \"first-topic\",
+  ;; => ({:topic \"topic-a\",
   ;;      :partition 0,
   ;;      :offset 2,
   ;;      :key nil,
