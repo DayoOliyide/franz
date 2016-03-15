@@ -2,7 +2,7 @@
   (:import [java.util HashMap Map Properties]
            [org.apache.kafka.clients.consumer ConsumerRecord ConsumerRecords OffsetAndMetadata]
            org.apache.kafka.clients.producer.RecordMetadata
-           [org.apache.kafka.common Node PartitionInfo TopicPartition]))
+           [org.apache.kafka.common Metric MetricName Node PartitionInfo TopicPartition]))
 
 (defprotocol ToClojure
   ""
@@ -54,7 +54,19 @@
   (to-clojure [x]
     {:topic (.topic x)
      :partition (.partition x)
-     :offset (.offset x)}))
+     :offset (.offset x)})
+
+  MetricName
+  (to-clojure [x]
+    {:name (.name x)
+     :description (.description x)
+     :group (.group x)
+     :tags (reduce  (fn [m [t t-val]] (assoc m t t-val)) {} (.tags x))})
+
+  Metric
+  (to-clojure [x]
+    {:metric-name (to-clojure (.metricName x))
+     :value (.value x)}))
 
 (defn ^Properties map->properties
   [^Map m]
@@ -138,3 +150,19 @@
   (let [reduce-fn (fn [m [name pi-list]]
                     (assoc m name (mapv to-clojure pi-list)))]
     (reduce reduce-fn {} str-pi)))
+
+
+(defn metrics->map
+  ""
+  [^Map m]
+  (let [reduce-fn (fn [m [^MetricName met-name ^Metric met]]
+                    (let [mn-map (to-clojure met-name)
+                          m-map (to-clojure met)
+                          group-key {:group (:group mn-map)}
+                          name-key {:name (:name mn-map)}
+                          tags-key {:tags (:tags mn-map)}
+                          met-val {:description (:description mn-map)
+                                   :value (:value m-map)}]
+                      (assoc-in m [group-key name-key tags-key] met-val)))]
+    (reduce reduce-fn {} m)))
+

@@ -354,6 +354,6 @@
 
 
 (defn metrics
-  "TODO"
+  ""
   [^KafkaConsumer consumer]
-  )
+  (metrics->map (.metrics consumer)))

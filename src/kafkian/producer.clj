@@ -106,6 +106,7 @@
   (mapv to-clojure (.partitionsFor producer topic)))
 
 (defn metrics
-  "TODO"
+  ""
   [^KafkaProducer producer]
+  (metrics->map (.metrics producer))
   )
