@@ -1,4 +1,6 @@
-(ns ^{:doc "Clojure interface for Kafka Consumer API. For\n  complete JavaDocs\nsee:\n  http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/package-summary.html"}
+(ns ^{:doc "Clojure interface for Kafka Consumer API. For
+  complete JavaDocs, see:
+  http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/package-summary.html"}
     kafkian.consumer
   (:require [kafkian.data :refer :all])
   (:import java.util.List
@@ -12,18 +14,35 @@
 (defn byte-array-deserializer [] (ByteArrayDeserializer.))
 
 (defn consumer
-  "Takes a map of config options and return a `KafkaConsumer` for consuming records from Kafka.
+  "Takes a map of config options and returns a `KafkaConsumer` for consuming records from Kafka.
 
-  For available conifg options, see: http://kafka.apache.org/documentation.html#newconsumerconfigs
+  NOTE `KafkaConsumer` instances are NOT thread-safe, see https://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#multithreaded
+
+  For more information and available conifg options,
+  see: http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html
+       http://kafka.apache.org/documentation.html#newconsumerconfigs
 
   Usage:
 
+;; Created using just a map of configs, in this case the keys
+;; bootstrap.servers value.deserializer and key.deserializer are required
+ (consumer {\"bootstrap.servers\" \"localhost:9092\"
+            \"group.id\" \"test-group-id\"
+            \"value.deserializer\" \"org.apache.kafka.common.serialization.StringDeserializer\"
+            \"key.deserializer\" \"org.apache.kafka.common.serialization.StringDeserializer\"})
+
+;; Created using a map of configs and the deserializers for keys and values.
+ (consumer {\"bootstrap.servers\" \"localhost:9092\"
+            \"group.id\" \"test-group-id\"} (string-deserializer) (string-deserializer))
+
+;; KafkaConsumer should be closed when not used anymore, as it's closeable,
+;; it can be used in the with-open macro
   (def config {\"bootstrap.servers\" \"localhost:9092\"
-                       \"group.id\" \"data-pipe\"
-                       \"auto.commit.interval.ms\" \"1000\"})
+               \"group.id\" \"test-group-id\"})
   (with-open [c (consumer config (string-deserializer) (string-deserializer))]
     (subscribe c \"topic-a\")
     (take 5 (messages c)))
+
   "
   ([^java.util.Map config]
    (KafkaConsumer. config))
@@ -137,28 +156,36 @@
 
 (defn seek
   "Seeks the consumer offset to given offset on the topic-partitions.
-   NOTE:
-   The topic-partition can be given as 2 arguments, the topic (string) and partition (int)
+
+   NOTE The topic-partition can be given as 2 arguments, the topic (string) and partition (int)
    or it can be given as 1 argument, which is a map sequence e.g '({:topic \"topic\" :partition 2}).
    The offset can be a long, :beginning or :end.
 
   Usage:
 
   (seek consumer \"topic-a\" 23 7)
+  ;; => nil
+
   (seek consumer \"topic-b\" 23 :beginning)
+  ;; => nil
+
   (seek consumer \"topic-c\" 23 :end)
+  ;; => nil
 
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] 7)
+  ;; => nil
 
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] :beginning)
+  ;; => nil
 
   (seek consumer [{:topic \"topic-a\" :partition 23}
                   {:topic \"topic-b\" :partition 23}
                   {:topic \"topic-c\" :partition 23}] :end)
+  ;; => nil
 
   "
   ([^KafkaConsumer consumer topic partition offset]
@@ -209,32 +236,30 @@
 
 (defn commit-async
   "Commits the offsets of messages returned by the last call to the messages function or the given offsets.
-  This is done aysnchronously and will return immediately.
+
+  NOTE This is done aysnchronously and will return immediately.
   (Based on the code in kafka-clients 0.9.0.0 the commit request is not
-   actually made until next time the messages function is called)
+   actually made until the next time the messages function is called)
 
   Usage:
 
-  1) Commits all the offsets received from the last call to the messages function.
-     Exceptions/Errors are ignored
-
+  ; Commits all the offsets received from the last call to the messages function.
+  ; Exceptions/Errors are ignored
   (commit-async consumer)
+  ;; => nil
 
 
-
-  2) Commits all the offsets received from the last call to the messages function.
-     Success or failure is handled by the given callback function
-
+  ; Commits all the offsets received from the last call to the messages function.
+  ; Success or failure is handled by the given callback function
   (commit-async consumer (fn [offsets exception]
                           (if exception
                              (println \"Commits failed for \" offsets \" Exception->\" exception)
                              (println \"Commits passed for \" offsets))))
+  ;; => nil
 
 
-
-  3) Commits the specified offsets to the specific topic-partitions.
-     Success or failure is handled by the given callback function
-
+  ; Commits the specified offsets to the specific topic-partitions.
+  ; Success or failure is handled by the given callback function
   (def tp-om   {{:topic \"topic-a\", :partition 4} {:offset 24, :metadata \"important commit\"},
                 {:topic \"topic-a\", :partition 1} {:offset 234, :metadata \"commited by thread A\"},
                 {:topic \"topic-b\", :partition 7} {:offset 23, :metadata \"commited on 12/12/12\"}})
@@ -243,6 +268,7 @@
                                 (if exception
                                    (println \"Commits failed for \" offsets \" Exception->\" exception)
                                    (println \"Commits passed for \" offsets))))
+  ;; => nil
   "
   ([^KafkaConsumer consumer] (.commitAsync consumer))
   ([^KafkaConsumer consumer offset-commit-fn]
@@ -260,25 +286,23 @@
 
 (defn commit-sync
   "Commits the offsets of messages returned by the last call to the messages function or the given offsets.
-  This is done synchronously and will block until success or failure (Exception thrown)
+  NOTE This is a blocking I/O operation and will throw an Exception on failure
 
   Usage:
 
-  1) Commits all the offsets received from the last call to the messages function.
-     If there's any failure, an Exception is thrown.
-
+  ; Commits all the offsets received from the last call to the messages function.
+  ; If there's any failure, an Exception is thrown.
   (commit-sync consumer)
+  ;; => nil
 
-
-  2) Commits the specified offsets to the specific topic-partitions.
-     If there's any failure, an Exception is thrown.
-
-
+  ; Commits the specified offsets to the specific topic-partitions.
+  ; If there's any failure, an Exception is thrown.
   (def tp-om   {{:topic \"topic-a\", :partition 4} {:offset 24, :metadata \"important commit\"},
                 {:topic \"topic-a\", :partition 1} {:offset 234, :metadata \"commited by thread A\"},
                 {:topic \"topic-b\", :partition 7} {:offset 23, :metadata \"commited on 12/12/12\"}})
 
   (commit-sync consumer tp-om)
+  ;; => nil
   "
   ([^KafkaConsumer consumer] (.commitSync consumer))
   ([^KafkaConsumer consumer topic-partitions-offsets-metadata]
@@ -288,12 +312,14 @@
 
 (defn last-committed-offset
   "Gets the last committed offset for the partition of a topic.
-   This function may block,
+   NOTE This function is a blocking I/O operation.
+
    see http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#committed(org.apache.kafka.common.TopicPartition)
 
   Usage:
 
   (last-committed-offset consumer {:topic \"topic-a\" :partition 2})
+  ;; => {:offset 10, :metadata \"Metadata set during commit\"}
   "
   [^KafkaConsumer consumer tp]
   (->> tp
@@ -303,19 +329,64 @@
 
 
 (defn list-all-topics
-  "Get metadata about all partitions for all topics that the user is authorized to view.
-   This function may block for a short time.
+  "Get metadata about ALL partitions for ALL topics that the user is authorized to view.
+   NOTE This function is a blocking I/O operation.
+
    See http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#listTopics()
 
+  Usage :
+
+  (list-all-topics consumer)
+  ;; =>{\"topic-a\"
+  ;;    [{:topic \"topic-a\",
+  ;;      :partition 0,
+  ;;      :leader {:id 3, :host \"172.17.0.5\", :port 9094},
+  ;;      :replicas [{:id 3, :host \"172.17.0.5\", :port 9094}],
+  ;;      :in-sync-replicas [{:id 3, :host \"172.17.0.5\", :port 9094}]}],
+  ;;    \"topic-b\"
+  ;;    [{:topic \"topic-b\",
+  ;;      :partition 2,
+  ;;      :leader {:id 1, :host \"172.17.0.4\", :port 9092},
+  ;;      :replicas [{:id 1, :host \"172.17.0.4\", :port 9092}],
+  ;;      :in-sync-replicas [{:id 1, :host \"172.17.0.4\", :port 9092}]}
+  ;;      {:topic \"topic-b\",
+  ;;      :partition 1,
+  ;;      :leader {:id 3, :host \"172.17.0.5\", :port 9094},
+  ;;      :replicas [{:id 3, :host \"172.17.0.5\", :port 9094}],
+  ;;      :in-sync-replicas [{:id 3, :host \"172.17.0.5\", :port 9094}]}
+  ;;      {:topic \"topic-b\",
+  ;;      :partition 0,
+  ;;      :leader {:id 2, :host \"172.17.0.3\", :port 9093},
+  ;;      :replicas [{:id 2, :host \"172.17.0.3\", :port 9093}],
+  ;;      :in-sync-replicas [{:id 2, :host \"172.17.0.3\", :port 9093}]}]}
   "
   [^KafkaConsumer consumer]
   (str-pi-map->map (.listTopics consumer)))
 
 (defn list-all-partitions
   "Get metadata about all partitions for a particular topic.
-   This function may block for a short time.
+   NOTE This function is a blocking I/O operation.
+
    See http://kafka.apache.org/090/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#partitionsFor(java.lang.String)
 
+  Usage :
+
+  (list-all-partitions consumer)
+  ;; => [{:topic \"topic-b\",
+  ;;      :partition 2,
+  ;;      :leader {:id 1, :host \"172.17.0.4\", :port 9092},
+  ;;      :replicas [{:id 1, :host \"172.17.0.4\", :port 9092}],
+  ;;      :in-sync-replicas [{:id 1, :host \"172.17.0.4\", :port 9092}]}
+  ;;     {:topic \"topic-b\",
+  ;;      :partition 1,
+  ;;      :leader {:id 3, :host \"172.17.0.5\", :port 9094},
+  ;;      :replicas [{:id 3, :host \"172.17.0.5\", :port 9094}],
+  ;;      :in-sync-replicas [{:id 3, :host \"172.17.0.5\", :port 9094}]}
+  ;;     {:topic \"topic-b\",
+  ;;      :partition 0,
+  ;;      :leader {:id 2, :host \"172.17.0.3\", :port 9093},
+  ;;      :replicas [{:id 2, :host \"172.17.0.3\", :port 9093}],
+  ;;      :in-sync-replicas [{:id 2, :host \"172.17.0.3\", :port 9093}]}]
 "
   [^KafkaConsumer consumer topic]
   (mapv to-clojure  (.partitionsFor consumer topic)))
@@ -354,6 +425,38 @@
 
 
 (defn metrics
-  ""
+  "Returns a map data structure representing all the consumer's internal metrics.
+
+   The map structure is unfortunately quite dense and is essentially made of maps
+   containing keys mapping to maps recursively.
+
+   The structure can be viewed as
+   Level 1:  {:group metric-group-name} -mapping-to-> {{:name metric-name} {}}
+   Level 2:  {:name  metric-name}       -mapping-to-> {{:tags map-of-tags} {}}
+   Level 3:  {:tags  map-of-tags}       -mapping-to-> {:description metric-description
+                                                       :value metric-value}
+
+  Usage :
+
+  ;The following is a simplified result showing only the data
+  ;for the metric request-size-avg under the consumer-metrics group and tagged with
+  ;with a client-id of consumer-1.
+
+  (metrics consumer)
+  ;; => {{:group \"consumer-metrics\"} {{:name \"request-size-avg\"} {{:tags {\"client-id\" \"consumer-1\"}} {:description \"The average size of all requests in the window..\" :value 75.0}}}}
+
+
+  ;To help in navigating such a dense structure, there's the metrics-lens function in the
+  ; kafkian.utility-belt namespace
+
+  (use 'kafkian.utility-belt)
+  (def metrics-map (metrics consumer))
+
+  (metrics-lens metrics-map :group \"consumer-metrics\" :name \"request-size-avg\" :tags {\"client-id\" \"consumer-1\"})
+  ;; => {:description \"The average size of all requests in the window..\", :value 75.0}
+
+  (metrics-lens metrics-map :group :ONLY)
+  ;; => (\"consumer-node-metrics\" \"consumer-coordinator-metrics\" \"consumer-metrics\" \"consumer-fetch-manager-metrics\")
+  "
   [^KafkaConsumer consumer]
   (metrics->map (.metrics consumer)))
