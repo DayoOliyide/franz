@@ -59,8 +59,10 @@
     NOTE
         1) It navigates in the order :group :name :tags and returns a map matching
            in order
-        2) The :ANY value matches key for the given key. (Equivalent to regex *)
-        3) The :ONLY value indicates that navigation stops there and only the distinct
+        2) If any of the keys (:group :name :tags) are missing they automactically
+           assigned with the :ANY value
+        3) The :ANY value matches key for the given key. (Equivalent to regex *)
+        4) The :ONLY value indicates that navigation stops there and only the distinct
            key elements at that level are returned.
 
   USAGE:
