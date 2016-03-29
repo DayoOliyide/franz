@@ -6,4 +6,4 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.apache.kafka/kafka-clients "0.9.0.0"]
                  [org.apache.kafka/kafka_2.11 "0.9.0.0"]
-                 [com.rpl/specter "0.9.2"]])
+                 [midje "1.8.3"]])
