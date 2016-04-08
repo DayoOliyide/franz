@@ -425,38 +425,23 @@
 
 
 (defn metrics
-  "Returns a map data structure representing all the consumer's internal metrics.
-
-   The map structure is unfortunately quite dense and is essentially made of maps
-   containing keys mapping to maps recursively.
-
-   The structure can be viewed as
-   Level 1:  {:group metric-group-name} -mapping-to-> {{:name metric-name} {}}
-   Level 2:  {:name  metric-name}       -mapping-to-> {{:tags map-of-tags} {}}
-   Level 3:  {:tags  map-of-tags}       -mapping-to-> {:description metric-description
-                                                       :value metric-value}
+  "Returns a sequence of maps representing all the consumer's internal metrics.
+   Each map contains information about metric-group (:group), metric-name (:name),
+   metric-description (:description), metric-tags (:tags) and metric-value (:value)
 
   Usage :
 
-  ;The following is a simplified result showing only the data
-  ;for the metric request-size-avg under the consumer-metrics group and tagged with
-  ;with a client-id of consumer-1.
-
   (metrics consumer)
-  ;; => {{:group \"consumer-metrics\"} {{:name \"request-size-avg\"} {{:tags {\"client-id\" \"consumer-1\"}} {:description \"The average size of all requests in the window..\" :value 75.0}}}}
-
-
-  ;To help in navigating such a dense structure, there's the metrics-lens function in the
-  ; kafkian.utility-belt namespace
-
-  (use 'kafkian.utility-belt)
-  (def metrics-map (metrics consumer))
-
-  (metrics-lens metrics-map :group \"consumer-metrics\" :name \"request-size-avg\" :tags {\"client-id\" \"consumer-1\"})
-  ;; => {:description \"The average size of all requests in the window..\", :value 75.0}
-
-  (metrics-lens metrics-map :group :ONLY)
-  ;; => (\"consumer-node-metrics\" \"consumer-coordinator-metrics\" \"consumer-metrics\" \"consumer-fetch-manager-metrics\")
+  ;; => [{:group \"consumer-coordinator-metrics\",
+  ;;      :name \"sync-time-max\",
+  ;;      :description \"The max time taken for a group sync\",
+  ;;      :tags {\"client-id\" \"consumer-3\"},
+  ;;      :value 0.0}
+  ;;     {:group \"consumer-fetch-manager-metrics\",
+  ;;      :name \"bytes-consumed-rate\",
+  ;;      :description \"The average number of bytes consumed per second\",
+  ;;      :tags {\"client-id\" \"consumer-3\"},
+  ;;      :value 0.0}]
   "
   [^KafkaConsumer consumer]
   (metrics->map (.metrics consumer)))

@@ -151,18 +151,30 @@
                     (assoc m name (mapv to-clojure pi-list)))]
     (reduce reduce-fn {} str-pi)))
 
-
 (defn metrics->map
-  ""
-  [^Map m]
-  (let [reduce-fn (fn [m [^MetricName met-name ^Metric met]]
-                    (let [mn-map (to-clojure met-name)
-                          m-map (to-clojure met)
-                          group-key {:group (:group mn-map)}
-                          name-key {:name (:name mn-map)}
-                          tags-key {:tags (:tags mn-map)}
-                          met-val {:description (:description mn-map)
-                                   :value (:value m-map)}]
-                      (assoc-in m [group-key name-key tags-key] met-val)))]
-    (reduce reduce-fn {} m)))
+  "Returns a sequence of maps, with each map representing a metric.
+   The composition of each map is :group :name :description :tags :value
 
+  Usage :
+  (metrics->map m)
+  ;; => [{:group \"consumer-coordinator-metrics\",
+  ;;      :name \"sync-time-max\",
+  ;;      :description \"The max time taken for a group sync\",
+  ;;      :tags {\"client-id\" \"consumer-3\"},
+  ;;      :value 0.0}
+  ;;     {:group \"consumer-fetch-manager-metrics\",
+  ;;      :name \"bytes-consumed-rate\",
+  ;;      :description \"The average number of bytes consumed per second\",
+  ;;      :tags {\"client-id\" \"consumer-3\"},
+  ;;      :value 0.0}]
+   "
+  [m]
+  (let [map-fn (fn [[^MetricName met-name ^Metric met]]
+                 (let [mn-map (to-clojure met-name)
+                       m-map (to-clojure met)]
+                   {:group (:group mn-map)
+                    :name (:name mn-map)
+                    :description (:description mn-map)
+                    :tags (:tags mn-map)
+                    :value (:value m-map)}))]
+    (mapv map-fn m)))

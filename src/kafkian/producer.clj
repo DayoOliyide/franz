@@ -146,38 +146,28 @@
   (mapv to-clojure (.partitionsFor producer topic)))
 
 (defn metrics
-  "Returns a map data structure representing all the producer's internal metrics.
-
-   The map structure is unfortunately quite dense and is essentially made of maps
-   containing keys mapping to maps recursively.
-
-   The structure can be viewed as
-   Level 1:  {:group metric-group-name} -mapping-to-> {{:name metric-name} {}}
-   Level 2:  {:name  metric-name}       -mapping-to-> {{:tags map-of-tags} {}}
-   Level 3:  {:tags  map-of-tags}       -mapping-to-> {:description metric-description
-                                                       :value metric-value}
+  "Returns a sequence of maps representing all the producer's internal metrics.
+   Each map contains information about metric-group (:group), metric-name (:name),
+   metric-description (:description), metric-tags (:tags) and metric-value (:value)
 
   Usage :
 
-  ;The following is a simplified result showing only the data
-  ;for the metric response-rate under the producer-metrics group and tagged with
-  ;with a client-id of producer-1.
-
   (metrics producer)
-  ;; => {{:group \"producer-metrics\"} {{:name \"response-rate\"} {{:tags {\"client-id\" \"producer-1\"}} {:description \"Responses received sent per second.\" :value 0.0}}}}
-
-
-  ;To help in navigating such a dense structure, there's the metrics-lens function in the
-  ; kafkian.utility-belt namespace
-
-  (use 'kafkian.utility-belt)
-  (def metrics-map (metrics producer))
-
-  (metrics-lens metrics-map :group \"producer-metrics\" :name \"response-rate\" :tags {\"client-id\" \"producer-1\"})
-  ;; => {:description \"Responses received sent per second.\", :value 0.0}
-
-  (metrics-lens metrics-map :group :ONLY)
-  ;; => (\"producer-node-metrics\" \"producer-metrics\" \"producer-topic-metrics\")
+  ;; => [{:group \"producer-metrics\",
+  ;;      :name \"record-queue-time-avg\",
+  ;;      :description \"The average time in ms record batches spent in the record accumulator.\",
+  ;;      :tags {\"client-id\" \"producer-2\"},
+  ;;      :value 0.1}
+  ;;     {:group \"producer-metrics\",
+  ;;      :name \"outgoing-byte-rate\",
+  ;;      :description \"The average number of outgoing bytes sent per second to all servers.\",
+  ;;      :tags {\"client-id\" \"producer-2\"},
+  ;;      :value 31.668376965849703}
+  ;;     {:group \"producer-node-metrics\",
+  ;;      :name \"response-rate\",
+  ;;      :description \"The average number of responses received per second.\",
+  ;;      :tags {\"client-id\" \"producer-2\", \"node-id\" \"node-3\"},
+  ;;      :value 0.23866348448687352}]
   "
   [^KafkaProducer producer]
   (metrics->map (.metrics producer))
