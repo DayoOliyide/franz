@@ -110,7 +110,7 @@
     (if (and (sequential? topics) (map? (first topics)))
       (do
         (let [expand-tps (fn [{:keys [topic partitions]}]
-                           (reduce #(conj %1 (map->topic-partition {:topic topic :partition %2})) [] partitions))
+                           (doall (map #(map->topic-partition {:topic topic :partition %}) partitions)))
               exploded-tps (mapcat expand-tps topics)]
           (.assign consumer exploded-tps)))
       (.subscribe consumer topics listener))))
