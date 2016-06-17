@@ -10,8 +10,7 @@ which clj-kafka doesn't currently have.
 
 **NOTE**:This library is NOT compatible with Kafka Clusters below version 0.9
          Use the [clj- kafka](https://github.com/pingles/clj-kafka/) for Kafka Clusters version 0.8
-
-**Still a SNAPSHOT release, a propery release will be done soon**
+         So far it's only been tested against 0.9 Kafka Clusters
 
 ## Installation
 
