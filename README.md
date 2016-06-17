@@ -27,7 +27,9 @@ Add the following to your [Leiningen](http://github.com/technomancy/leiningen) `
 ```Clojure
 (require '[kafkian.producer :as kp])
 
-(with-open [p (kp/producer {"bootstrap.servers" "localhost:9092"} (kp/string-serializer) (kp/string-serializer))]
+(with-open [p (kp/producer {"bootstrap.servers" "localhost:9092"}
+                           (kp/string-serializer)
+                           (kp/string-serializer))]
   @(kp/send p (kp/record "topic-a" "Hola Mundo!")))
 ```
 
@@ -37,8 +39,11 @@ Add the following to your [Leiningen](http://github.com/technomancy/leiningen) `
 (require '[kafkian.consumer :as kc])
 
 (with-open [c (kc/consumer {"bootstrap.servers" "localhost:9092"
-                            "group.id" "consumer-id"} (kc/string-deserializer) (kc/string-deserializer))]
-  (kc/messages c :topic "topic-a"))
+                            "group.id" "consumer-id"}
+                            (kc/string-deserializer)
+                            (kc/string-deserializer))]
+  (kc/subscribe c "topic-a")
+  (kc/messages c))
 ```
 
 ### Admin
