@@ -1,16 +1,17 @@
 # kafkian
 
-A Clojure library for the Kafka 0.9 release.
+A Clojure library for the Kafka 0.9.X.X and 0.10.0.0 release.
 
 This library takes it's inspiration and some code from the [clj- kafka](https://github.com/pingles/clj-kafka/) library.
 
-It's raison d'être is that I had an immediate need for a clojure wrapper/interface to Kafka 0.9,
-which clj-kafka doesn't currently have.
+Current build status: [![Build Status](https://circleci.com/gh/DayoOliyide/kafkian/tree/master.svg?style=svg)](https://circleci.com/gh/DayoOliyide/kafkian/tree/master)
 
-
-**NOTE**:This library is NOT compatible with Kafka Clusters below version 0.9
+**NOTE**:
+This library is *NOT* compatible with Kafka Clusters below version 0.9
          Use the [clj- kafka](https://github.com/pingles/clj-kafka/) for Kafka Clusters version 0.8
-         So far it's only been tested against 0.9 Kafka Clusters
+         So far it's only been tested against 0.9 and 0.10 Kafka Clusters
+
+**[CHANGELOG]**
 
 ## Installation
 
